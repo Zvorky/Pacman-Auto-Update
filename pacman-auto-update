@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# Pacman Auto Update
+# Simple script to update automatically pacman packages when AFK
+
+# Enzo Zavorski Delevatti
+# @Zvorky
+#___          ___,
+#___\      .~´    `-,
+#___\°    /  _    _ \.
+#   \°   ,\`|_|''|_|´\
+#    °    /          /)   °
+#        (\  ,    , .\`   |°
+#         `) ;`,; `,^,)   ||°
+#         ´,´  `,  `  `   |||
+#                          \\\
+#         March   2024      |||
+#                           '''
+
+
+
+# Timing Settings
+MAX_INACTIVITY=300000   # MiliSeconds   - The system will be updated after this time AFK
+UPDATE_COOLDOWN=10800   # Seconds       - Delay to start checking again after an update
+CHECK_COOLDOWN=60       # Seconds       - Delay from a inactivity verification to another
+
+# You can use another package manager too...
+UPDATE_COMMAND=(sudo pacman -Syu --noconfirm)
+
+
+
+# Get idle time from X11 or terminal
+get_idle_time() {
+    if [ -n "$DISPLAY" ]; then
+        # Install xprintidle and update system if command not found
+        if ! command -v xprintidle &> /dev/null; then
+            "${UPDATE_COMMAND[@]}" xprintidle
+        fi
+        echo $(xprintidle)
+    else
+        echo $(w | awk '/tty/{print $4}')
+    fi
+}
+
+
+
+# Install xprintidle if command not found
+if [ -n "$DISPLAY" ] && ! command -v xprintidle &> /dev/null; then
+    "${UPDATE_COMMAND[@]}" xprintidle
+fi
+
+
+# Loop Checking for Inactivity
+while true; do
+    if (( $(get_idle_time) >= MAX_INACTIVITY )); then
+        "${UPDATE_COMMAND[@]}"
+        sleep $UPDATE_COOLDOWN
+    else
+        sleep $CHECK_COOLDOWN
+    fi
+done
